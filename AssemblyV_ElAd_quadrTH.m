@@ -23,7 +23,7 @@ function [S,K,A,AP,B1,B2,C,Face_estifS,rhs_d,rhs_p] = ...
                            Face_flag,Face_thick,Disco,Discoef,...
                            L_char,S_char,U_char,...
                            nnodeP,nfaceP,coeff,wh)
-global verbose;
+global debug;
 
 nip   = 4;         % number of integration points
 dim   = 2;	   %
@@ -41,7 +41,7 @@ rhs_d= zeros(2*nnode,1);
 rhs_p= zeros(nnodeP,1);
 nall = 2*nnode;
 
-if(verbose ~= 0)
+if(debug ~= 0)
     disp('Begin allocating memory...')
 end
 
@@ -81,7 +81,7 @@ CJ  = zeros(lengthC,1);
 CV  = zeros(lengthC,1);
 nextC = 0;
 
-if(verbose ~= 0)
+if(debug ~= 0)
     disp('...end allocating memory.')
 end
 
@@ -253,7 +253,7 @@ C  = sparse(CI, CJ, CV);
 B = [B1;B2];
 %S = [K+A B; B' C];  %y-cordinate axis pointing uppwards
 S = [K-A B; B' C];  %y-cordinate axis pointing downwards (as coincides with Erik)
-if (nnz(A)>0 & verbose ~= 0)
+if (nnz(A)>0 & debug ~= 0)
    disp('PRE-STRESS ADVECTION MATRIX WITH ''-''.')  % 
 end
 % ------ 

@@ -15,7 +15,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 close all
-% ------------------------------- global definitions
+%% ------------------------------- global definitions
 global average_inner how_many outer_solv inner_solv inner_solver_type
 global restart restart_tol
 global avcgit_d avcgit_u
@@ -27,8 +27,18 @@ global L11d U11d L11u U11u % lu(A11)/luinc(A11)
 global kkk lll
 global eps_inner
 global theta
+% Debug variable
+% 1 - print debug texts
+% 0 - no debug
+global debug;
+debug = 0;
 
+%% Variables
+% 0 - No additional output(figure and text)
+% 1 - Only figures
+% 2 - everything
 verbose = 1;
+
 np    = 4;  % number of points in the finite element
 nip   = 4;  % number of integration points
 dim   = 2;  % number of degree of freedom (elasticity part)
@@ -42,30 +52,9 @@ actionFEMt=['iter=0 ','iter=1 ','iter=2 ','iter=3 ','iter=4 ',...
 lll = 2;
 kkk = 1;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Homogeneous half-space %%%%%%%%%%%%
-% wh = 'gs' 
-% Nx = 10;  Ny =  5;  % number of elements in 'x'- and 'y'-direction
-% hx = 0.1; hy =-0.1; % set explicitly on the code 
-% True paraneter values:       Scaled values
-% L = 10000 km                 L = 1
-% H =  5000 km                 H = 0.5
-% E  = 435 GPA                 E  = 1
-% nu = 0.2--0.5                nu = 0.2--0.5
-% Surf load = 15 MPa           Surf load = ???
-% Boxcar = 1000 km             Boxcar = 0.1  (half length)
-%
+%% Preparing parameters and mesh
 tic
-%________________________________ start creating [0,1]^2 domain 
-%------------------ simple example: linear in 'y', wh='q0'
-%[Node,Edge,Face,Node_flagx,Node_flagy,Edge_flagx,Edge_flagy,...
-%      Face_flag,Face_thick,Disco,Discoef,...
-%      l_ice,h_ice,rho_ice,rho_earth,...
-%      grav,load_surf,...
-%      L_char, S_char, U_char, N_char, T_char, Scal,...
-%      T_LGM, T_EOG, T,...
-%     hx,hy,Nx,Ny,wh] = Square_elast_vq0;
-%________________________________ end   creating [0,1]^2 domain 
-%________________________________ start creating true glacial domain 
+
 wh = 'gs';
 no_domains = 2;
 Emagn = 1; % can be 1, 10, 100 (jump in E between the two subdomains)
@@ -73,42 +62,37 @@ Emagn = 1; % can be 1, 10, 100 (jump in E between the two subdomains)
  Disco,Discoef,grav,load_surf,...
  L_char, S_char, U_char, N_char, T_char, Scal,...
  T_LGM, T_EOG, T] = Visco_parameters_new4(no_domains,wh,Emagn); 
-% T_LGM, T_EOG, T] = Visco_parameters_Wu(no_domains,wh); 
-	  
-%[Node,Edge,Face,Node_flagx,Node_flagy,Edge_flagx,Edge_flagy,...
-% Face_flag,Face_thick,hx,hy,Nx,Ny] = Rectan_glace(L,H,no_domains); 
+% T_LGM, T_EOG, T] = Visco_parameters(no_domains,wh,Emagn); 
 
-%[xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_Wu(L,H);
 H0=-max(abs(H));	  
 Nx = 6;
 Ny = 3;
 [xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_TH(L,H0,Nx,Ny);	
-[Node,Edge,Face,Node_flagx,Node_flagy,...
+
+[Node,Edge,Face,...
+ Node_flagx,Node_flagy,...
  Edge_flagx,Edge_flagy,...
  Face_flag,Face_thick] = Rectan_glace_vect(L,H,xc,yc,Nx,Ny,...
                                            no_domains,Disco); 
-%________________________________ end   creating true glacial domain 
 
+% Visualise the mesh
 if(verbose ~= 0)
     figure(1),clf,Bvisual_mesh(Node,Edge,Face,1,1,1,0,16)
 end
 disp(['Time to create initial mesh: ' num2str(toc)])
+
 % -------------------- Input parameters ---------
 levels = input('How many times to refine: ');
 
    h     = min(abs(hx),abs(hy))/(2^levels);
    sigma = h^2;
-%   sigma = 0.1*h^2;  %only for comparisons with Erik
    disp('sigma  = h^2') 
-
-%sigma=h^2/10;
-%sigma,wait
 
 solver_type = 1;
    
 tic
 for lvl=1:levels, 
-        [Node,Edge,Face,...
+    [Node,Edge,Face,...
      Node_flagx,Node_flagy,...
      Edge_flagx,Edge_flagy,...
      Face_flag,Face_thick] = my_Refine_quadr(Node,Edge,Face,...
@@ -168,7 +152,7 @@ for lvl=1:1,   % only once
     nface_lvl,nnode_lvl] = my_Refine_quadr_hier(Node,Edge,Face,...
                                 Node_flagx,Node_flagy,Edge_flagx,Edge_flagy,...
                                 Face_flag,Face_thick,nface_lvl,nnode_lvl,lvl);
-%Bvisual_mesh(Node,Edge,Face,0,0,0,0,16)
+% Bvisual_mesh(Node,Edge,Face,1,1,1,1,16)
 end
 
 nnode = size(Node,2);
@@ -194,12 +178,24 @@ bndry_edge = zeros(nedge,1);
 bndry_edge = sum(Face_Edge,1);    % The boundary edges are with sum '1'
 [noi,Bndry_Edges]=find(bndry_edge==1); % Bndry_Edges is a list of boundary edges ONLY!
 % ------------ detect boundary edges under the ice
-if wh=='gs'  % ice for y=0, 0<=x<=length_ice
-  [noi,noj]=find(Node(2,:)==0);
-  [noii,Bndry_Ice] = find(Node(1,noj)<=l_ice); 
-end 
+% if wh=='gs'  % ice for y=0, 0<=x<=length_ice
+%   [noi,noj]=find(Node(2,:)==0);
+%   [noii,Bndry_Ice] = find(Node(1,noj)<=l_ice); 
+% end 
 
 Surface_Nodes = find(Node(2,:)==0); % all surface nodes
+Node_Ice = [];
+Bndry_Ice = [];
+if wh=='gs'  % ice for y=0, 0<=x<=length_ice
+  noj = find(Node(1,Surface_Nodes)<=l_ice); 
+  Node_Ice = Surface_Nodes(noj); % Node number of the nodes under the ice
+  Bndry_Ice = 0*Node_Ice;
+  for i=1:length(Node_Ice)
+      temp = find(Edge(1,:) == Node_Ice(i));
+      temp2 = find(Node(2,Edge(2,temp)) == 0);
+      Bndry_Ice(i) = temp(temp2);
+  end
+end
 
 Node_Face_noP = sum(Face_Node(:,:,1))./2; %to how many faces each P node belongs
 Node_Face_noD = sum(Face_Node(:,:,2))./2; %to how many faces each D node belongs
