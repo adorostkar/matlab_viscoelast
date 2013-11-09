@@ -22,8 +22,8 @@ function [S,K,A,AP,B1,B2,C,Face_estifS,rhs_d,rhs_p] = ...
                            Face_eorder11,Face_eorder22,...
                            Face_flag,Face_thick,Disco,Discoef,...
                            L_char,S_char,U_char,...
-                           nnodeP,nfaceP,coeff,wh)
-global debug;
+                           nnodeP,nfaceP,vec_coeff,wh)
+global verbose;
 
 nip   = 4;         % number of integration points
 dim   = 2;	   %
@@ -41,7 +41,7 @@ rhs_d= zeros(2*nnode,1);
 rhs_p= zeros(nnodeP,1);
 nall = 2*nnode;
 
-if(debug ~= 0)
+if(verbose ~= 0)
     disp('Begin allocating memory...')
 end
 
@@ -81,7 +81,7 @@ CJ  = zeros(lengthC,1);
 CV  = zeros(lengthC,1);
 nextC = 0;
 
-if(debug ~= 0)
+if(verbose ~= 0)
     disp('...end allocating memory.')
 end
 
@@ -142,11 +142,11 @@ rho = (1-2*nju)/(2*nju);    %mju/lan;
 
     [El_elem,Ad_elem,Ap_elem,B1_elem,B2_elem,M_elem,DerivD]=...
      Assm_ElAdSaddle_quadrTH(Gauss_point,Gauss_weight,...
-                             Coord,CoordP,coeff,nju,wh);
+                             Coord,CoordP,vec_coeff,nju,wh);
 
     [bforce,FP1]=body_force_sdo(Face_flag(face_child,1),...
                                 Face_thick(face_child,1),...
-                                Coord,mju,rho,coeff,wh);
+                                Coord,mju,rho,vec_coeff,wh);
 % - - - - - bforce is a (ndof x 1) vector (for quadrilaterals)
 % - - - - - FP1    is a (nip x 1)  vector (for quadrilaterals)
 %           IN separate displacements ordering !!!
@@ -253,7 +253,7 @@ C  = sparse(CI, CJ, CV);
 B = [B1;B2];
 %S = [K+A B; B' C];  %y-cordinate axis pointing uppwards
 S = [K-A B; B' C];  %y-cordinate axis pointing downwards (as coincides with Erik)
-if (nnz(A)>0 & debug ~= 0)
+if (nnz(A)>0 & verbose ~= 0)
    disp('PRE-STRESS ADVECTION MATRIX WITH ''-''.')  % 
 end
 % ------ 

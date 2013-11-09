@@ -22,7 +22,7 @@ function [S,K,B1,B2,C,Face_estifSo] = AssemblyV_El_quadrTH(Node,Face_Node,...
                             Face_flag,Face_thick,Disco,Discoef,...
                             L_char,S_char,U_char,... 
 			                nnodeP,nfaceP,wh,delta_t)
-global debug;
+global verbose;
 
 nip   = 4;         % number of integration points
 dim   = 2;         %
@@ -38,7 +38,7 @@ B1  = spalloc(nnode,nnode,ndof*nnode);
 B2  = spalloc(nnode,nnodeP,ndof*nnode);
 C   = spalloc(nnodeP,nnodeP,9*nnode);
 nall = 2*nnode;
-if(debug ~= 0)
+if(verbose ~= 0)
     disp('Begin allocating memory...')
 end
 lengthK=nface*ndof*ndof;
@@ -65,7 +65,7 @@ CJ  = zeros(lengthC,1);
 CV  = zeros(lengthC,1);
 nextC = 0;
 
-if(debug ~= 0)
+if(verbose ~= 0)
     disp('...end allocating memory.')
 end
 

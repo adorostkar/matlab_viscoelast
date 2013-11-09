@@ -43,13 +43,13 @@
 T_BEG = 0; % the time point from which the ise load is imposed
 
 disp('WITH PRE-STRESS ADVECTION.')  % with advection
-vec_coeff0 = [0,-rho_earth*grav,0,-rho_earth*grav];
+vec_coeff0 = [0,rho_earth*grav,0,rho_earth*grav];
 %vec_coeff0 = [0,-0.5,0,-0.5],pause
 %disp('NO PRE-STRESS ADVECTION.')  % no advection
 %vec_coeff0 = [0,0,0,0];
 theta = 0.5;    % in this case we use Trapetz method
 
-vec_coeff  = L_char/S_char*vec_coeff0;
+vec_coeff  = U_char/L_char*vec_coeff0;
 
 Face_estiffS =zeros(ndof+np,ndof+np,nface);
 
@@ -159,11 +159,10 @@ while (norm_dif>1e-6)&(time_length<=Tmax)
         Node(2,i) = UVPy(i,k) + Node(2,i);
     end
    if(verbose ~= 0)
-       figure(2),clf,Bvisual_mesh(Node,Edge,Face,1,1,1,0,16)
+       %figure(2),clf%,Bvisual_mesh(Node,Edge,Face,1,1,1,0,16)
+       figure,plot(Node(1,Surface_Nodes), Node(2,Surface_Nodes),'.')
    end
- 
-    %     figure
-    %     plot(Node(1,Surface_Nodes), UVPx(Surface_Nodes,end),'.')
+         
     
     disp(['Proceed with step ' int2str(k)]),
     disp(['norm(uvp_cur-uvp_prev) ' num2str(norm_dif) ...

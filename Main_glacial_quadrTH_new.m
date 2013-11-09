@@ -60,13 +60,13 @@ no_domains = 2;
 Emagn = 1; % can be 1, 10, 100 (jump in E between the two subdomains)
 [L,H,l_ice,h_ice,rho_ice,rho_earth,...
  Disco,Discoef,grav,load_surf,...
- L_char, S_char, U_char, N_char, T_char, Scal,...
+ L_char, S_char, U_char, N_char, T_char, ...
  T_LGM, T_EOG, T] = Visco_parameters_new4(no_domains,wh,Emagn); 
 % T_LGM, T_EOG, T] = Visco_parameters(no_domains,wh,Emagn); 
 
 H0=-max(abs(H));	  
-Nx = 6;
-Ny = 3;
+Nx = L/(2*l_ice)+1;      % ensure mesh aligned with the ice after one refinement
+Ny = abs(H0)/(2*l_ice)+1;
 [xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_TH(L,H0,Nx,Ny);	
 
 [Node,Edge,Face,...
@@ -177,25 +177,36 @@ end
 bndry_edge = zeros(nedge,1);
 bndry_edge = sum(Face_Edge,1);    % The boundary edges are with sum '1'
 [noi,Bndry_Edges]=find(bndry_edge==1); % Bndry_Edges is a list of boundary edges ONLY!
+clear bndry_edge
 % ------------ detect boundary edges under the ice
-% if wh=='gs'  % ice for y=0, 0<=x<=length_ice
-%   [noi,noj]=find(Node(2,:)==0);
-%   [noii,Bndry_Ice] = find(Node(1,noj)<=l_ice); 
-% end 
-
-Surface_Nodes = find(Node(2,:)==0); % all surface nodes
-Node_Ice = [];
-Bndry_Ice = [];
-if wh=='gs'  % ice for y=0, 0<=x<=length_ice
-  noj = find(Node(1,Surface_Nodes)<=l_ice); 
-  Node_Ice = Surface_Nodes(noj); % Node number of the nodes under the ice
-  Bndry_Ice = 0*Node_Ice;
-  for i=1:length(Node_Ice)
-      temp = find(Edge(1,:) == Node_Ice(i));
-      temp2 = find(Node(2,Edge(2,temp)) == 0);
-      Bndry_Ice(i) = temp(temp2);
-  end
+ if wh=='gs'  % ice for y=0, 0<=x<=length_ice
+    Surface_Nodes = find(Node(2,:)==0); % all surface nodes
+    [noi,noj] = find(Node(1,Surface_Nodes)<=l_ice);
+    Ice_Nodes = Surface_Nodes(noj);
+ end 
+%[noi,noj]=find(Edge_Node(:,Surface_Nodes));
+[noi,noj]=find(Edge_Node(:,Ice_Nodes));
+noi=unique(noi);
+clear Bndry_Ice, lb=0;
+for i=1:length(noi),
+    if (Node(2,Edge(:,noi(i)))==[0 0])&(prod(Node(1,Edge(:,noi(i))))<=l_ice^2), 
+        lb = lb + 1; Bndry_Ice(lb)=noi(i);
+    end
 end
+
+ 
+%  Node_Ice = [];
+% Bndry_Ice = [];
+% if wh=='gs'  % ice for y=0, 0<=x<=length_ice
+%   noj = find(Node(1,Surface_Nodes)<=l_ice); 
+%   Node_Ice = Surface_Nodes(noj); % Node number of the nodes under the ice
+%   Bndry_Ice = 0*Node_Ice;
+%   for i=1:length(Node_Ice)
+%       temp = find(Edge(1,:) == Node_Ice(i));
+%       temp2 = find(Node(2,Edge(2,temp)) == 0);
+%       Bndry_Ice(i) = temp(temp2);
+%   end
+% end
 
 Node_Face_noP = sum(Face_Node(:,:,1))./2; %to how many faces each P node belongs
 Node_Face_noD = sum(Face_Node(:,:,2))./2; %to how many faces each D node belongs

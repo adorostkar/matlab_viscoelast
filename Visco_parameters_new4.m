@@ -4,17 +4,17 @@
 % L         - length (horizontal size) of the domain                (m)
 % H         - vertical size of the domain                           (m)
 % L_char    - characteristic length of the domain = max(L,H)        (m)
-% l_ice     - max width of he ice  sheet                            (m)
+% l_ice     - max width of the ice sheet                            (m)
 % h_ice     - max height of the ice sheet                           (m)
 % nju       - Poisson ratio (per subdomain)                dimensionless
-% E         - Young modulus (per subdomain)                        (Pa)
-% rho_ice   - ice density                                       (kg/m?)
-% rho_earth - Earth density                                     (kg/m?)
+% E         - Young modulus (per subdomain)      (Pa = N/m^2 = kg/(m.s^2))
+% rho_ice   - ice density                                        (kg/m^3)
+% rho_earth - Earth density                                      (kg/m^3)
 % eta       - viscosity                                          (Pa s)
-% grav      - gravity constant                                   (m/s?)
+% grav      - gravity constant                                    (m/s)
 % S_char    - characteristic stress (S=max(E_i), i = 1:domains)    (Pa)
 % U_char    - characteristic displacement                           (m)
-% scal_fact - scaling factor (L?/(S*U)                           (m/Pa)
+% scal_fact - scaling factor (L/(S*U)                            (m/Pa)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % T_BEG     - time >0, when the ice load starts to be imposed
 % T_LGM     - time to reach the glacial maximum
@@ -33,17 +33,17 @@
 %
 %    --------------------
 %    |                  |
-%    |   Omega2         | Omega2 - nju and E are variable
+%    |   Omega2         | 
 %    --------------------
 %    |                  |
-%    |   Omega1         | Omega2 nju=0.5, E=400e+0 Pa
+%    |   Omega1         | 
 %    --------------------
 
 
 %
 function [L,H,l_ice,h_ice,rho_ice,rho_earth,...
     Disco,Discoef,grav,load_surf,...
-    L_char, S_char, U_char, N_char, T_char, Scal,...
+    L_char, S_char, U_char, N_char, T_char, ...
     T_LGM, T_EOG, T] = visco_parameters(domains,wh,Emagn)
 %% - - - - - - problem and geometry parameters
 % - - - - - Tuned to Wu paper "Deformation of an incompressible viscoelastic 
@@ -62,8 +62,12 @@ nju(1)     = 0.25;   % dimensionless
 nju(2)     = 0.25;   % dimensionless (to be varied)
 eta0       = 1.45e+21;  % Viscosity Pa s
 grav       = 9.81;   % m/s^2
-Years      = 200000; % total simulation time (200000 years)
-load_surf  = 18.1e+6;% pa
+Years      = 18400; % total simulation time (years)
+T_LGM0     = 0; %90000*secs_per_year;         % Last Glaciation Maximum duration in seconds.
+T_EOG0     = 0; %T_LGM0+10000*secs_per_year;  % End of Glaciation.
+
+
+load_surf  = []; %18.1e+6;% pa
 
 %% Rescaling 
 E0            = max(E_domains); % Pa
@@ -75,36 +79,24 @@ T0            = Years*secs_per_year; % s - total simulation time in seconds
 L_char     = abs(L0);  %L_char=max(abs(L),abs(H));
 S_char     = E0;       %S_char=max(E) in all subdomains
 U_char     = 1;
-N_char     = eta0;% max(of eta) in all subdomains
+N_char     = eta0; % max(of eta) in all subdomains
 T_char     = N_char/S_char; % so that S_char*T_char/N_char = 1
-Scal       = L_char^2/(S_char*U_char);
 %- - - - -
-T_LGM0     = 90000*secs_per_year;         % Last Glaciation Maximum duration in seconds.
-T_EOG0     = T_LGM0+10000*secs_per_year;  % End Of Glaciation.
 
 
 
 % - - - - - - scaled values
-%Test 
-% N_char     = S_char;% max(of eta) in all subdomains
-% T_char     = N_char/S_char; % so that S_char*T_char/N_char = 1
-% Scal       = L_char^2/(S_char*U_char);
-% load_surf = load_surf/S_char;
-% rho_ice   = rho_ice0; %??
-% rho_earth = rho_earth0; %??
-% eta       = eta0/N_char;
-% - - - - - -
 L  = L0/L_char;
 H  = H/L_char;
 E  = E_domains/S_char;
 l_ice     = l_ice0/L_char;
 h_ice     = h_ice0/L_char;
-rho_ice   = rho_ice0; %??
-rho_earth = rho_earth0; %??
-eta       = eta0/N_char;
+rho_ice   = rho_ice0;   
+rho_earth = rho_earth0; 
+eta       = eta0/N_char; % 
+T         = T0/T_char;
 T_LGM     = T_LGM0/T_char;
 T_EOG     = T_EOG0/T_char;
-T         = T0/T_char;
 
 Disco(1,1,1:domains) =  0;   %form x
 Disco(2,1,1:domains) =  L;   %to   x

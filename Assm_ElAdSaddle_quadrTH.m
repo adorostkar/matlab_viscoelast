@@ -5,11 +5,11 @@
 % FUNP - shape functions for the pressure
 % DERP - derivatives of FUNP
 % -----> in this particular case they are the same
-% coeff - ???? add description
+% vec_coeff - ???? add description
 % --------------------------------------------------------------------
 function [E_elem,A_elem,APelem,B1_elem,B2_elem,M_elem,DerivD]=...
          Assm_ElAdSaddle_quadrTH(Gauss_point,Gauss_weight,...
-	 Coord,CoordP,coeff,nju,wh)
+	 Coord,CoordP,vec_coeff,nju,wh)
 
       np    = 4;                    % number of points per f.e.
       nip   = 4;                    % nip = number of integration points
@@ -44,7 +44,7 @@ function [E_elem,A_elem,APelem,B1_elem,B2_elem,M_elem,DerivD]=...
 	 R_elem = assm_rot_quad(DerivD);
          E_elem = E_elem + 2*DetD*Gauss_weight(k)*L_elem ... % (ndof x ndof)
 	                 -   DetD*Gauss_weight(k)*R_elem;  % elasticity terms
-         A0_elem= advect(FUND,DerivD,Gauss_point(:,k),np,coeff,nju,wh);
+         A0_elem= advect(FUND,DerivD,Gauss_point(:,k),np,vec_coeff,nju,wh);
          A_elem = A_elem  + DetD*Gauss_weight(k)*A0_elem; % advection terms
 	 B1_elem= B1_elem + DetD*Gauss_weight(k)*G1_elem;
 	 B2_elem= B2_elem + DetD*Gauss_weight(k)*G2_elem;

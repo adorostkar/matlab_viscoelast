@@ -21,8 +21,7 @@ if ~(strcmp(wh,'g1')&strcmp(wh,'g2')), % no surface forces,exact sol known
                       Node(1,Edge(2,k)),Node(2,Edge(2,k)),...
 				     wh,l_ice,h_ice,rho_ice,grav,...
 				     time_length,T_BEG,T_LGM,T_EOG);
-       G = L_char^2/(S_char*U_char)*G0; 
-%       G= G0;   
+       G = (L_char/S_char)*G0;   
        rhs_d(Edge(1,k),1)       = rhs_d(Edge(1,k),1)       + G(1);
        rhs_d(Edge(2,k),1)       = rhs_d(Edge(2,k),1)       + G(1);
        rhs_d(Edge(1,k)+nnode,1) = rhs_d(Edge(1,k)+nnode,1) + G(2);
