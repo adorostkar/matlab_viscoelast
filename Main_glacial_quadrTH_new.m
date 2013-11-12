@@ -48,7 +48,7 @@ actionILU =[999,1e-1,1e-2,1e-3];
 actionILUt=['exact solve(A11)','cholinc(0.0100) ','cholinc(0.0010) ','cholinc(0.0001) '];
 actionFEM =[0,1,2,3,4,5,1e6,999];
 actionFEMt=['iter=0 ','iter=1 ','iter=2 ','iter=3 ','iter=4 ',...
-           'iter=5 ','iter=50','Z12    '];
+            'iter=5 ','iter=50','Z12    '];
 lll = 2;
 kkk = 1;
 
@@ -60,46 +60,47 @@ no_domains = 2;
 Emagn = 1; % can be 1, 10, 100 (jump in E between the two subdomains)
 % -- delta_t_char corresponds to one scaled year --
 [L,H,l_ice,h_ice,rho_ice,rho_earth,...
-Disco,Discoef,grav,load_surf,...
-L_char, S_char, U_char, N_char, T_char, ...
-T_LGM, T_EOG, T, delta_t_char] = Visco_parameters_new4(no_domains,wh,Emagn); 
+ Disco,Discoef,grav,load_surf,...
+ L_char, S_char, U_char, N_char, T_char, ...
+ T_LGM, T_EOG, T, delta_t_char] = Visco_parameters_new4(no_domains,wh,Emagn); 
 % T_LGM, T_EOG, T] = Visco_parameters(no_domains,wh,Emagn); 
 
 H0=-max(abs(H));	  
 Nx = L/(2*l_ice)+1;      % ensure mesh aligned with the ice after one refinement
 Ny = abs(H0)/(2*l_ice)+1;
 [xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_TH(L,H0,Nx,Ny);	
+%[xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_Wu_coarse(L,H,l_ice);
 
 [Node,Edge,Face,...
-Node_flagx,Node_flagy,...
-Edge_flagx,Edge_flagy,...
-Face_flag,Face_thick] = Rectan_glace_vect(L,H,xc,yc,Nx,Ny,...
-                                          no_domains,Disco); 
+ Node_flagx,Node_flagy,...
+ Edge_flagx,Edge_flagy,...
+ Face_flag,Face_thick] = Rectan_glace_vect(L,H,xc,yc,Nx,Ny,...
+                                           no_domains,Disco); 
 
 % Visualise the mesh
 if(verbose ~= 0)
-   figure(1),clf,Bvisual_mesh(Node,Edge,Face,1,1,1,0,16)
+    figure(1),clf,Bvisual_mesh(Node,Edge,Face,1,1,1,0,16)
 end
 disp(['Time to create initial mesh: ' num2str(toc)])
 
 % -------------------- Input parameters ---------
 levels = input('How many times to refine: ');
 
-  h     = min(abs(hx),abs(hy))/(2^levels);
-  sigma = h^2;
-  disp('sigma  = h^2') 
+   h     = min(abs(hx),abs(hy))/(2^levels);
+   sigma = h^2;
+   disp('sigma  = h^2') 
 
 solver_type = 1;
-
+   
 tic
 for lvl=1:levels, 
-   [Node,Edge,Face,...
-    Node_flagx,Node_flagy,...
-    Edge_flagx,Edge_flagy,...
-    Face_flag,Face_thick] = my_Refine_quadr(Node,Edge,Face,...
-                                  Node_flagx,Node_flagy,...
-                                  Edge_flagx,Edge_flagy,...
-                                  Face_flag,Face_thick);
+    [Node,Edge,Face,...
+     Node_flagx,Node_flagy,...
+     Edge_flagx,Edge_flagy,...
+     Face_flag,Face_thick] = my_Refine_quadr(Node,Edge,Face,...
+                                   Node_flagx,Node_flagy,...
+                                   Edge_flagx,Edge_flagy,...
+                                   Face_flag,Face_thick);
 %     figure(1),Bvisual_mesh(Node,Edge,Face,1,1,1,0,16)
 end
 
@@ -144,15 +145,15 @@ nface_lvl(1) = size(Face,2);
 nnode_lvl(1) = size(Node,2);
 
 for lvl=1:1,   % only once
-  [Node,Edge,Face,...
-   Node_flagx,Node_flagy,...
-   Edge_flagx,Edge_flagy,...
-   Face_flag,Face_thick,...
-   Face_Node,Face_Parent,...
-   Face_eorder11,Face_eorder22,...
-   nface_lvl,nnode_lvl] = my_Refine_quadr_hier(Node,Edge,Face,...
-                               Node_flagx,Node_flagy,Edge_flagx,Edge_flagy,...
-                               Face_flag,Face_thick,nface_lvl,nnode_lvl,lvl);
+   [Node,Edge,Face,...
+    Node_flagx,Node_flagy,...
+    Edge_flagx,Edge_flagy,...
+    Face_flag,Face_thick,...
+    Face_Node,Face_Parent,...
+    Face_eorder11,Face_eorder22,...
+    nface_lvl,nnode_lvl] = my_Refine_quadr_hier(Node,Edge,Face,...
+                                Node_flagx,Node_flagy,Edge_flagx,Edge_flagy,...
+                                Face_flag,Face_thick,nface_lvl,nnode_lvl,lvl);
 % Bvisual_mesh(Node,Edge,Face,1,1,1,1,16)
 end
 
@@ -164,14 +165,14 @@ nface = size(Face,2);      % number of subdomains (for the displacements)
 Edge_Node = spalloc(nedge,nnode,2*nedge);
 Face_Edge = spalloc(nface,nedge,np*nface);
 for iedge=1:nedge,
-   Edge_Node(iedge,Edge(1,iedge))=1;
-   Edge_Node(iedge,Edge(2,iedge))=1;
+    Edge_Node(iedge,Edge(1,iedge))=1;
+    Edge_Node(iedge,Edge(2,iedge))=1;
 end
 for iface=1:nface,
-   Face_Edge(iface,Face(1,iface))=1;
-   Face_Edge(iface,Face(2,iface))=1;	 
-   Face_Edge(iface,Face(3,iface))=1;
-   Face_Edge(iface,Face(4,iface))=1;
+    Face_Edge(iface,Face(1,iface))=1;
+    Face_Edge(iface,Face(2,iface))=1;	 
+    Face_Edge(iface,Face(3,iface))=1;
+    Face_Edge(iface,Face(4,iface))=1;
 end 
 
 % ------------ detect boundary edges
@@ -180,22 +181,22 @@ bndry_edge = sum(Face_Edge,1);    % The boundary edges are with sum '1'
 [noi,Bndry_Edges]=find(bndry_edge==1); % Bndry_Edges is a list of boundary edges ONLY!
 clear bndry_edge
 % ------------ detect boundary edges under the ice
-if wh=='gs'  % ice for y=0, 0<=x<=length_ice
-   Surface_Nodes = find(Node(2,:)==0); % all surface nodes
-   [noi,noj] = find(Node(1,Surface_Nodes)<=l_ice);
-   Ice_Nodes = Surface_Nodes(noj);
-end 
+ if wh=='gs'  % ice for y=0, 0<=x<=length_ice
+    Surface_Nodes = find(Node(2,:)==0); % all surface nodes
+    [noi,noj] = find(Node(1,Surface_Nodes)<=l_ice);
+    Ice_Nodes = Surface_Nodes(noj);
+ end 
 %[noi,noj]=find(Edge_Node(:,Surface_Nodes));
 [noi,noj]=find(Edge_Node(:,Ice_Nodes));
 noi=unique(noi);
 clear Bndry_Ice, lb=0;
 for i=1:length(noi),
-   if (Node(2,Edge(:,noi(i)))==[0 0])&(prod(Node(1,Edge(:,noi(i))))<=l_ice^2), 
-       lb = lb + 1; Bndry_Ice(lb)=noi(i);
-   end
+    if (Node(2,Edge(:,noi(i)))==[0 0])&(prod(Node(1,Edge(:,noi(i))))<=l_ice^2), 
+        lb = lb + 1; Bndry_Ice(lb)=noi(i);
+    end
 end
 
-
+ 
 %  Node_Ice = [];
 % Bndry_Ice = [];
 % if wh=='gs'  % ice for y=0, 0<=x<=length_ice
@@ -228,3 +229,4 @@ eps_inner = 5e-1;
 Visco_elastic_solverTH_new
 
 return
+

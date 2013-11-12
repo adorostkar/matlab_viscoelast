@@ -12,11 +12,11 @@ A11=zeros(np,np); A12=zeros(np,np); A21=zeros(np,np); A22=zeros(np,np);
 b1 = b_vec(Coord,1,vec_coeff,wh);
 b2 = b_vec(Coord,2,vec_coeff,wh);
 if nju==0.5,
-  c1 = 0;
-  c2 = 0;
+   c1 = 0;
+   c2 = 0;
 else
-  c1 = c_vec(Coord,1,vec_coeff,wh);
-  c2 = c_vec(Coord,2,vec_coeff,wh);
+   c1 = c_vec(Coord,1,vec_coeff,wh);
+   c2 = c_vec(Coord,2,vec_coeff,wh);
 end
 
 % A11 = -b1*FUN*DER(1,:) + c1*FUN*DER(1,:);
