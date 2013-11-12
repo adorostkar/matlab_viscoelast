@@ -10,14 +10,20 @@
 
 function [MTM]=pre_mass(FUN,ndof,nodof)
 
-MTM = zeros(6,6);
-      nod = ndof/nodof;
-      for k=1:nod
-         for l=1:nodof
-            NT((k-1)*nodof+l,l) = FUN(k);
-         end
-      end
+MTM = zeros(ndof,ndof);
+nod = ndof/nodof;
+% % if NOT SDO
+% % NT  = zeros(ndof,nodof);
+% %       for k=1:nod
+% %          for l=1:nodof
+% %             NT((k-1)*nodof+l,l) = FUN(k);
+% %          end
+% %       end
+% % 
+% % MTM = NT*NT';
 
-MTM = NT*NT';
+% for SDO
+M = FUN'*FUN;
+MTM = [M zeros(nod); zeros(nod) M];
 
 return

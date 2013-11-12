@@ -42,9 +42,9 @@
 
 %
 function [L,H,l_ice,h_ice,rho_ice,rho_earth,...
-    Disco,Discoef,grav,load_surf,...
-    L_char, S_char, U_char, N_char, T_char, ...
-    T_LGM, T_EOG, T] = visco_parameters(domains,wh,Emagn)
+   Disco,Discoef,grav,load_surf,...
+   L_char, S_char, U_char, N_char, T_char, ...
+   T_LGM, T_EOG, T, delta_t_char] = visco_parameters(domains,wh,Emagn)
 %% - - - - - - problem and geometry parameters
 % - - - - - Tuned to Wu paper "Deformation of an incompressible viscoelastic 
 % - - - - - - - - flat earth with power law creep" page 37
@@ -97,6 +97,7 @@ eta       = eta0/N_char; %
 T         = T0/T_char;
 T_LGM     = T_LGM0/T_char;
 T_EOG     = T_EOG0/T_char;
+delta_t_char = secs_per_year/T_char;
 
 Disco(1,1,1:domains) =  0;   %form x
 Disco(2,1,1:domains) =  L;   %to   x
