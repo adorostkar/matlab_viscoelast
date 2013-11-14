@@ -3,7 +3,7 @@
 
 function h = height_ice(wh,x,y,h_ice,time_length,T_BEG,T_LGM,T_EOG)
 
-if wh=='gs',
+if (wh=='gs')|(wh=='g0'),
    h = h_ice; % boxcar with fixed height
 % currentlyy all other ice shapes are excluded/not tested
 elseif wh=='g2',

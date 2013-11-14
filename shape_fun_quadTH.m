@@ -1,6 +1,6 @@
 % --------------------------------------------------------------------
 % Evaluates the bilinear b.f. at point 'k' from array 'points'
-% 'points' contains the coordinates of the reference triangle
+% 'points' contains the coordinates of the reference quadrilateral
 % (-1,-1),(-1,3),(3,3)(3,-1)
 %
 % Presummed ordering of the nodepoints in the reference f.e.:

@@ -8,7 +8,7 @@
 % --------------------------------------------------------------------
 function [E_elem,B1_elem,B2_elem,M_elem,DerivD]=...
          Assm_ElSaddle_quadrTH(Gauss_point,Gauss_weight,...
-	                       FUND_all,DERD_all,FUNP_all,...
+	                       FUND_all,DERD_all,FUNPc,Ga,x2,y2,...
                                Coord,CoordP,wh)
 
       np    = 4;                    % number of points per f.e.
@@ -34,8 +34,10 @@ function [E_elem,B1_elem,B2_elem,M_elem,DerivD]=...
 %         FUNP   = shape_fun_quadTH(Gauss_point,k);
 
 %         FUND   = FUND_all(:,k);   %shape_fun_brick(Gauss_point,k);     % (4x1)
+         x3=x2'*Ga(:,k);         
+         y3=y2'*Ga(:,k);         
+         FUNP   = FUNPc'*[x3;y3;x3*y3;1];        
          DERD   = DERD_all(:,:,k); %shape_der_brick(Gauss_point,k);     % (2x4)
-         FUNP   = FUNP_all(:,k);   %shape_fun_brick(Gauss_point,k);     % (4x1)
          JacD   = DERD*Coord;                     % JacD(2,2)=(2,nip)*(nip,2)
          DetD   = determinant2_m(JacD);
          IJacD  = inv(JacD);

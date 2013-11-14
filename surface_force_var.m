@@ -31,7 +31,7 @@ else
      x = (x1+x2)*0.5;
      y = (y1+y2)*0.5;
      h_ice_cur = height_ice(wh,x,y,h_ice,time_length,T_BEG,T_LGM,T_EOG);
-     F(2) = -grav*rho_ice*h_ice_cur*0.5*cosa;
+     F(2) = -grav*rho_ice*h_ice_cur*cosa;
 end
 
 return

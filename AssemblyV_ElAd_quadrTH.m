@@ -31,6 +31,7 @@ dim   = 2;	   %
 ndof  = 8;         % ndof = nip*dim
 no_children = 4;   % number of children per macroelement
 lvl = 2;           %
+Q2=[-1 -1 1 1;-1 1 -1 1;1 1 1 1;1 -1 -1 1];
 
 nface = size(Face_Node,2);   % number of finite elements
 nnode = size(Node,2);   % number of nodes
@@ -87,6 +88,8 @@ if(verbose ~= 0)
 end
 
 %[Gauss_point,Gauss_weight] = Integr_weights_quad;
+       Ga=[Gauss_point(1,:);Gauss_point(2,:);
+           Gauss_point(1,:).*Gauss_point(2,:);[1 1 1 1]];
 			  
 for iface_p=1:nfaceP,     % ---> walk on the parent (pressure) elements
 %    disp(['Pressure face ' int2str(iface_p)])
@@ -96,9 +99,8 @@ for iface_p=1:nfaceP,     % ---> walk on the parent (pressure) elements
     CoordP(1:nip,2) = Node(2,local_node_listP)';
 
 % - - - - - generation of the pressure element matrices:
-    [C_elem,M_elem0]=Assm_quadrTH(Gauss_point,Gauss_weight,...
-			               FUND_all,DERD_all,FUNP_all,...
-                           CoordP,wh);
+    [C_elem,M_elem0]=Assm_quadrTH(Gauss_weight,...
+			               FUND_all,DERD_all,CoordP,wh);
 
    S_macro = zeros(18+4,18+4);
    K_macro = zeros(18,18);
@@ -106,32 +108,42 @@ for iface_p=1:nfaceP,     % ---> walk on the parent (pressure) elements
    B1_macro= zeros(9,4);
    B2_macro= zeros(9,4);
    
+% Compute the coarse basis functions
+      Q1(1:4,1)=CoordP(:,1);
+      Q1(1:4,2)=CoordP(:,2);
+      Q1(1:4,3)=CoordP(:,1).*CoordP(:,2);
+      Q1(1:4,4)=ones(4,1);
+      FUNPc  = Q1\eye(4);  % FUNPc(4,4) (each column describes the coeffs of a coarse b.f.)
+        
    for iface_c=1:no_children
 %    disp(['----------> Displacement face ' int2str(iface_c)])
        face_child       = Face_Parent(iface_c,iface_p,lvl-1);
        local_node_list  = Face_Node(:,face_child,lvl);
        local_node_list11= Face_eorder11(:,iface_p); 
-       macro_node_list  = [];  
-       for ii=1:4,
-           for jj=1:4,
-               if local_node_list(ii)==local_node_listP(jj);
-                  shft = ii; 
-               end
-           end
-           for jj=1:9,
-               if local_node_list11(jj)== local_node_list(ii),
-                  macro_node_list=[macro_node_list,jj];
-               end
-           end
-       end
-            
-   local_node_list=circshift(local_node_list,[-(shft-1),0]); % islishno
-   Coord(1:nip,1) = Node(1,local_node_list)';  % Coord(nip,2)
-   Coord(1:nip,2) = Node(2,local_node_list)';
-
-   CoordP(1:nip,1) = Node(1,local_node_listP)';  % CoordP(nip,2)
-   CoordP(1:nip,2) = Node(2,local_node_listP)';
-
+       Coord(1:nip,1) = Node(1,local_node_list)';  % Coord(nip,2)
+       Coord(1:nip,2) = Node(2,local_node_list)';
+       x2 = Q2\Coord(:,1);
+       y2 = Q2\Coord(:,2);
+       
+      
+       [pp,macro_node_list] = ismember(local_node_list,local_node_list11);
+       macro_node_list = macro_node_list';
+%        macro_node_list=[];
+%        for ii=1:4,
+%            for jj=1:4,
+%                if local_node_list(ii)==local_node_listP(jj);
+%                   shft = ii; 
+%                end
+%            end
+%            for jj=1:9,
+%                if local_node_list11(jj)== local_node_list(ii),
+%                   macro_node_list=[macro_node_list,jj];
+%                end
+%            end
+%        end
+%             
+%   local_node_list=circshift(local_node_list,[-(shft-1),0]); % islishno
+ 
 % ------------------------ determine nju, E
 nju = Discoef(1,Face_flag(face_child,1));
 E   = Discoef(2,Face_flag(face_child,1))*Face_thick(face_child,1);
@@ -145,7 +157,7 @@ rho = (1-2*nju)/(2*nju);    %mju/lan;
 
     [El_elem,Ad_elem,Ap_elem,B1_elem,B2_elem,M_elem,DerivD]=...
      Assm_ElAdSaddle_quadrTH(Gauss_point,Gauss_weight,...
-                             FUND_all,DERD_all,FUNP_all,...
+                             FUND_all,DERD_all,FUNPc,Ga,x2,y2,...
 			     Coord,CoordP,vec_coeff,nju,wh);
 
     [bforce,FP1]=body_force_sdo(Face_flag(face_child,1),...
@@ -158,7 +170,6 @@ rho = (1-2*nju)/(2*nju);    %mju/lan;
     rhs_elem8 = MM*bforce;
     FP1       = M_elem0*FP1;
  
-
 % -------------- the following ordering is NOT for separate displacements
 % local_node_liste = [2*local_node_list(1)-1,2*local_node_list(1),...
 %                     2*local_node_list(2)-1,2*local_node_list(2),...

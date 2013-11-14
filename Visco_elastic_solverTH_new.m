@@ -42,6 +42,7 @@
 
 % Precompute the basis functions for displacements and pressure
 % and their derivatives (for the reference element, in the Gauss points)
+% --> Note that FUNP_all correspond to a larger reference element (-1,-1)-(3,3)
 [Gauss_point,Gauss_weight] = Integr_weights_quad;
 nip = size(Gauss_point,2);   % number of integration points 
 for k=1:nip                         
@@ -52,11 +53,14 @@ end
 
 T_BEG = 0; % the time point from which the ise load is imposed
 
-disp('WITH PRE-STRESS ADVECTION.')  % with advection
-vec_coeff0 = [0,rho_earth*grav,0,rho_earth*grav];
-%vec_coeff0 = [0,-0.5,0,-0.5],pause
-%disp('NO PRE-STRESS ADVECTION.')  % no advection
-%vec_coeff0 = [0,0,0,0];
+if test_problem==0,
+   disp('NO PRE-STRESS ADVECTION.')  % no advection
+   vec_coeff0 = [0,0,0,0];
+else
+   disp('WITH PRE-STRESS ADVECTION.')  % with advection
+   vec_coeff0 = [0,rho_earth*grav,0,rho_earth*grav];
+%   vec_coeff0 = [0,-0.5,0,-0.5],pause    
+end
 theta = 0.5;    % in this case we use Trapetz method
 
 vec_coeff  = U_char/L_char*vec_coeff0;
@@ -71,7 +75,7 @@ Face_estiffS =zeros(ndof+np,ndof+np,nface);
                            Face_eorder11,Face_eorder22,...
                            Face_flag,Face_thick,Disco,Discoef,...
                            L_char,S_char,U_char,...
-			               Gauss_point,Gauss_weight,FUND_all,DERD_all,FUNP_all,...
+                           Gauss_point,Gauss_weight,FUND_all,DERD_all,FUNP_all,...
                            nnodeP,nfaceP,vec_coeff,wh); %pure elastic
 
 
@@ -106,7 +110,7 @@ rhs_p   = rhs_pb+rhs_ps;
 rhs_cur = [rhs_d;rhs_p];
 
 % I5. Choose initial guess for displacements and pressure (zero)
-uvp_prev        = zeros(2*nnode+nnodeP,1);
+uvp_prev         = zeros(2*nnode+nnodeP,1);
 UVPx(1:nnode, 1) = zeros(nnode,1);
 UVPy(1:nnode, 1) = zeros(nnode,1);
 UVPp(1:nnodeP,1) = zeros(nnodeP,1);
@@ -130,8 +134,8 @@ rhs_cur = rhs_cur + W;               % kept for consistency
 
 % I8. Solve (S - dk/2*A_visc(k))*U(k) = rhs;
 
-S_cur = S - theta*delta_t_cur*So;
-%S_cur = S;
+%S_cur = S - theta*delta_t_cur*So;
+S_cur = S;
 Dirichlet_visco            %  impose b.c. both to S_cur and rhs_cur
 
 %  compute U_1 = U(t1)
@@ -141,6 +145,13 @@ uvp_cur = S_cur\rhs_cur;   %  compute U_1 = U(t1)
 UVPx(1:nnode, 2) = uvp_cur(1:nnode,1);
 UVPy(1:nnode, 2) = uvp_cur(nnode+1:2*nnode,1);
 UVPp(1:nnodeP,2) = uvp_cur(2*nnode+1:2*nnode+nnodeP,1);
+
+if test_problem ==0, 
+   figure(2),clf
+   plot(Node(1,:),Node(2,:),'*'),hold
+   plot(Node(1,:),Node(2,:)+UVPy(:, 2)','ro')
+   return
+end
 
 % I9. Compute the integral [0->t(k)]:
 %     I(K) = dk/2*A_visc(0)*U(k) + W(k)

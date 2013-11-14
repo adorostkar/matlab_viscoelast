@@ -5,8 +5,8 @@
 % Stable discretization (modified Taylor-Hood elements) !!!
 % --> C  is the 22 matrix block 
 %   ----------------------
-%   |          |         |
-%   |    3     |    4    |
+%   |          |         |   This is the ordering, which is implicitly imposed
+%   |    3     |    4    |   when refining the mesh
 %   |          |         |
 %   |--------------------| 
 %   |          |         |
@@ -31,6 +31,7 @@ ndof  = 8;         % ndof = nip*dim
 no_children = 4;   % number of children per macroelement
 I4  = eye(4);      % needed to compute the pressure b.f.
 lvl = 2;           %
+Q2=[-1 -1 1 1;-1 1 -1 1;1 1 1 1;1 -1 -1 1];
 
 nface = size(Face_Node,2);   % number of finite elements
 nnode = size(Node,2);   % number of nodes
@@ -39,9 +40,11 @@ B1  = spalloc(nnode,nnode,ndof*nnode);
 B2  = spalloc(nnode,nnodeP,ndof*nnode);
 C   = spalloc(nnodeP,nnodeP,9*nnode);
 nall = 2*nnode;
+
 if(verbose ~= 0)
     disp('Begin allocating memory...')
 end
+
 lengthK=nface*ndof*ndof;
 KI  = zeros(lengthK,1);
 KJ  = zeros(lengthK,1);
@@ -71,29 +74,42 @@ if(verbose ~= 0)
 end
 
 %[Gauss_point,Gauss_weight] = Integr_weights_quad;
+       Ga=[Gauss_point(1,:);Gauss_point(2,:);
+           Gauss_point(1,:).*Gauss_point(2,:);[1 1 1 1]];
 			  
 for iface_p=1:nfaceP,     % ---> walk on the parent (pressure) elements
 %    disp(['Pressure face ' int2str(iface_p)])
      local_node_listP = Face_eorder22(:,iface_p);
 
    CoordP(1:nip,1) = Node(1,local_node_listP)';  % CoordP(nip,2)
-   CoordP(1:nip,2) = Node(2,local_node_listP)';
+   CoordP(1:nip,2) = Node(2,local_node_listP)';  % ordered
 
 % - - - - - generation of the pressure element matrices:
-    [C_elem,M_elem0]=Assm_quadrTH(Gauss_point,Gauss_weight,...
-    			   FUND_all,DERD_all,FUNP_all,...
-                           CoordP,wh);
+    [C_elem,M_elem0]=Assm_quadrTH(Gauss_weight,...
+    			   FUND_all,DERD_all,CoordP,wh);
 
    S_macro = zeros(18+4,18+4);
    K_macro = zeros(18,18);
    B1_macro= zeros(9,4);
    B2_macro= zeros(9,4);
 
+% Compute the coarse basis functions
+      Q1(1:4,1)=CoordP(:,1);
+      Q1(1:4,2)=CoordP(:,2);
+      Q1(1:4,3)=CoordP(:,1).*CoordP(:,2);
+      Q1(1:4,4)=ones(4,1);
+      FUNPc  = Q1\eye(4);  % FUNPc(4,4) (each column describes the coeffs of a coarse b.f.)
+      
    for iface_c=1:no_children
 %    disp(['----------> Displacement face ' int2str(iface_c)])
        face_child       = Face_Parent(iface_c,iface_p,lvl-1);
        local_node_list  = Face_Node(:,face_child,lvl);
        local_node_list11= Face_eorder11(:,iface_p); 
+       Coord(1:nip,1) = Node(1,local_node_list(1:nip))';  % Coord(nip,2)
+       Coord(1:nip,2) = Node(2,local_node_list(1:nip))';
+       x2 = Q2\Coord(:,1);
+       y2 = Q2\Coord(:,2);
+      
        macro_node_list  = [];
        for ii=1:4,
            for jj=1:4,
@@ -108,13 +124,6 @@ for iface_p=1:nfaceP,     % ---> walk on the parent (pressure) elements
            end
        end     
 
-   local_node_list=circshift(local_node_list,[-(shft-1),0]);
-   Coord(1:nip,1) = Node(1,local_node_list(1:nip))';  % Coord(nip,2)
-   Coord(1:nip,2) = Node(2,local_node_list(1:nip))';
-
-   CoordP(1:nip,1) = Node(1,local_node_listP)';  % CoordP(nip,2)
-   CoordP(1:nip,2) = Node(2,local_node_listP)';
-
 % ------------------------ determine nju, E
 nju  = Discoef(1,Face_flag(face_child,1));
 E    = Discoef(2,Face_flag(face_child,1))*Face_thick(face_child,1);
@@ -128,7 +137,7 @@ rho = (1-2*nju)/(2*nju)*alfa;        %mju/lan*alfa;
 
     [El_elem,B1_elem,B2_elem,M_elem,DerivD]=...
            Assm_ElSaddle_quadrTH(Gauss_point,Gauss_weight,...
-	                     FUND_all,DERD_all,FUNP_all,...
+	                     FUND_all,DERD_all,FUNPc,Ga,x2,y2,...
                              Coord,CoordP,wh);
 % -------------- the following ordering is NOT for separate displacements
 % local_node_liste = [2*local_node_list(1)-1,2*local_node_list(1),...

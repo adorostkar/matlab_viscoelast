@@ -11,7 +11,7 @@
 function [Node,Edge,Face,...
           Node_flagx,Node_flagy,Edge_flagx,Edge_flagy,...
          Face_flag,Face_thick] = Rectan_glace_vect(L,H,xc,yc,Nx,Ny,...
-                                                   domains,Disco)
+                                                   domains,Disco,wh)
 % ------- subdomain 1:        
 %   Node
 nnode = Nx*Ny;
@@ -58,7 +58,7 @@ for l=1:Ny-1,
         Face(3,face_no) = iedge + (2*Nx-1) + k;
         Face(4,face_no) = iedge + (Nx-1)   + k + 1;
         all_y_coord = Node(2,Edge(:,Face(:,face_no)));
-        if min(all_y_coord)>=Disco(2,2,1),
+        if min(abs(all_y_coord))>=abs(Disco(2,2,1)),
            Face_flag(face_no,1)  = 2;
         else
            Face_flag(face_no,1)  = 1;
@@ -72,29 +72,50 @@ end
 nnode = size(Node,2);
 Node_flagx(1:nnode,1)  = 0;
 Node_flagy(1:nnode,1)  = 0;
-
-for k=1:nnode,
-    if (Node(1,k)==0)|(Node(2,k)==H(domains)),%|(Node(1,k)==L),
-       Node_flagx(k,1)  = Flags('Dirichlet');
-    end
-    if (Node(2,k)==H(domains)),%|(Node(1,k)==L),
-       Node_flagy(k,1)  = Flags('Dirichlet');
-    end
+if wh == 'g0', % benchmark elasticity
+   G1=find(Node(1,:)==0);
+   G2=find(Node(1,:)==1);
+   G3=find(Node(2,:)==0);
+   Gy=find(Node(2,:)==-1);
+   Gx=cat(2,G1,G2,Gy);
+   Node_flagx(Gx,1) = Flags('Dirichlet');
+   Node_flagy(Gy,1) = Flags('Dirichlet');   
+else
+   for k=1:nnode,
+       if (Node(1,k)==0)|(Node(2,k)==H(domains)),%|(Node(1,k)==L),
+          Node_flagx(k,1)  = Flags('Dirichlet');
+       end
+       if (Node(2,k)==H(domains)),%|(Node(1,k)==L),
+          Node_flagy(k,1)  = Flags('Dirichlet');
+       end
+   end
 end
-
-nedge = size(Edge,2);
-Edge_flagx(1:nedge,1) = 0;
-Edge_flagy(1:nedge,1) = 0;
-for k=1:nedge,
-    k1 = Edge(1,k); k2=Edge(2,k);
-    if ((Node(2,k1)==H(domains))&(Node(2,k2)==H(domains)))|...
-       ((Node(1,k1)==0)&(Node(1,k2)==0))|...
-       ((Node(1,k1)==L)&(Node(1,k2)==L)),
-           Edge_flagx(k,1)  = Flags('Dirichlet');
-    end
-    if ((Node(2,k1)==H(domains))&(Node(2,k2)==H(domains)))|...
-       ((Node(1,k1)==L)&(Node(1,k2)==l)),
-           Edge_flagy(k,1)  = Flags('Dirichlet');
+   nedge = size(Edge,2);
+   Edge_flagx(1:nedge,1) = 0;
+   Edge_flagy(1:nedge,1) = 0;
+   
+if wh == 'g0', % benchmark elasticity
+   for k=1:nedge,
+        k1 = Edge(1,k); k2=Edge(2,k);
+       if (ismember(k1,Gx))&(ismember(k2,Gx)),
+              Edge_flagx(k,1)  = Flags('Dirichlet');
+       end
+       if (ismember(k1,Gy))&(ismember(k2,Gy)),
+              Edge_flagy(k,1)  = Flags('Dirichlet');
+       end 
+   end
+else
+   for k=1:nedge,
+       k1 = Edge(1,k); k2=Edge(2,k);
+       if ((Node(2,k1)==H(domains))&(Node(2,k2)==H(domains)))|...
+          ((Node(1,k1)==0)&(Node(1,k2)==0))|...
+          ((Node(1,k1)==L)&(Node(1,k2)==L)),
+              Edge_flagx(k,1)  = Flags('Dirichlet');
+       end
+       if ((Node(2,k1)==H(domains))&(Node(2,k2)==H(domains)))|...
+          ((Node(1,k1)==L)&(Node(1,k2)==l)),
+              Edge_flagy(k,1)  = Flags('Dirichlet');
+       end
     end
 end
 

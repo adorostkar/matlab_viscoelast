@@ -44,38 +44,54 @@ nip   = 4;  % number of integration points
 dim   = 2;  % number of degree of freedom (elasticity part)
 ndof  = 8;  % ndof = nip*dim
 
-actionILU =[999,1e-1,1e-2,1e-3];
-actionILUt=['exact solve(A11)','cholinc(0.0100) ','cholinc(0.0010) ','cholinc(0.0001) '];
-actionFEM =[0,1,2,3,4,5,1e6,999];
-actionFEMt=['iter=0 ','iter=1 ','iter=2 ','iter=3 ','iter=4 ',...
-            'iter=5 ','iter=50','Z12    '];
-lll = 2;
-kkk = 1;
+% actionILU =[999,1e-1,1e-2,1e-3];
+% actionILUt=['exact solve(A11)','cholinc(0.0100) ','cholinc(0.0010) ','cholinc(0.0001) '];
+% actionFEM =[0,1,2,3,4,5,1e6,999];
+% actionFEMt=['iter=0 ','iter=1 ','iter=2 ','iter=3 ','iter=4 ',...
+%             'iter=5 ','iter=50','Z12    '];
+% lll = 2;
+% kkk = 1;
 
 %% Preparing parameters and mesh
 tic
 
-wh = 'gs';
-no_domains = 2;
-Emagn = 1; % can be 1, 10, 100 (jump in E between the two subdomains)
+%test_problem = 0; % pure elasticity in unit square, benchmark
+test_problem = 1; % visco-elasticity
+if test_problem==0,
+  wh = 'g0';
+  no_domains = 1;  
+  Emagn = 1;
+  [L,H,l_ice,h_ice,rho_ice,rho_earth,...
+  Disco,Discoef,grav,load_surf,...
+  L_char, S_char, U_char, N_char, T_char, ...
+  T_LGM, T_EOG, T, delta_t_char] = Elasto_parameters(no_domains,wh,Emagn);
+  H0=-max(abs(H));	  
+  Nx = 3;      
+  Ny = 3;
+  [xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_TH(L,H0,Nx,Ny);
+else    
+  wh = 'gs';
+  no_domains = 2;
+  Emagn = 1; % can be 1, 10, 100 (jump in E between the two subdomains)
 % -- delta_t_char corresponds to one scaled year --
-[L,H,l_ice,h_ice,rho_ice,rho_earth,...
- Disco,Discoef,grav,load_surf,...
- L_char, S_char, U_char, N_char, T_char, ...
- T_LGM, T_EOG, T, delta_t_char] = Visco_parameters_new4(no_domains,wh,Emagn); 
+  [L,H,l_ice,h_ice,rho_ice,rho_earth,...
+   Disco,Discoef,grav,load_surf,...
+   L_char, S_char, U_char, N_char, T_char, ...
+   T_LGM, T_EOG, T, delta_t_char] = Visco_parameters_new4(no_domains,wh,Emagn); 
 % T_LGM, T_EOG, T] = Visco_parameters(no_domains,wh,Emagn); 
 
-H0=-max(abs(H));	  
-Nx = L/(2*l_ice)+1;      % ensure mesh aligned with the ice after one refinement
-Ny = abs(H0)/(2*l_ice)+1;
-[xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_TH(L,H0,Nx,Ny);	
-%[xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_Wu_coarse(L,H,l_ice);
+  H0=-max(abs(H));	  
+  Nx = L/(2*l_ice)+1;      % ensure mesh aligned with the ice after one refinement
+  Ny = abs(H0)/(2*l_ice)+1;
+%  [xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_TH(L,H0,Nx,Ny);	
+[xc,yc,hx,hy,Nx,Ny] = Glace_coord_vectors_Wu_coarse(L,H,l_ice);
+end
 
 [Node,Edge,Face,...
  Node_flagx,Node_flagy,...
  Edge_flagx,Edge_flagy,...
  Face_flag,Face_thick] = Rectan_glace_vect(L,H,xc,yc,Nx,Ny,...
-                                           no_domains,Disco); 
+                                           no_domains,Disco,wh); 
 
 % Visualise the mesh
 if(verbose ~= 0)
@@ -181,11 +197,11 @@ bndry_edge = sum(Face_Edge,1);    % The boundary edges are with sum '1'
 [noi,Bndry_Edges]=find(bndry_edge==1); % Bndry_Edges is a list of boundary edges ONLY!
 clear bndry_edge
 % ------------ detect boundary edges under the ice
- if wh=='gs'  % ice for y=0, 0<=x<=length_ice
+% if wh=='gs'  % ice for y=0, 0<=x<=length_ice
     Surface_Nodes = find(Node(2,:)==0); % all surface nodes
     [noi,noj] = find(Node(1,Surface_Nodes)<=l_ice);
     Ice_Nodes = Surface_Nodes(noj);
- end 
+% end 
 %[noi,noj]=find(Edge_Node(:,Surface_Nodes));
 [noi,noj]=find(Edge_Node(:,Ice_Nodes));
 noi=unique(noi);
